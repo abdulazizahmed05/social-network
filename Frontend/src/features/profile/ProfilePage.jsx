@@ -14,8 +14,10 @@ import {
   ShieldCheck,
   Users,
   UserPlus,
+  Clock,
 } from "@phosphor-icons/react";
 import {
+  cancelFollowRequest,
   followUser,
   getFollowers,
   getFollowing,
@@ -64,6 +66,7 @@ export default function ProfilePage() {
   const [deletingPostID, setDeletingPostID] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isFollowingProfile, setIsFollowingProfile] = useState(false);
+  const [isPendingProfile, setIsPendingProfile] = useState(false);
 
   const [followersList, setFollowersList] = useState([]);
   const [followingList, setFollowingList] = useState([]);
@@ -120,6 +123,7 @@ export default function ProfilePage() {
           setCurrentUser(myProfile);
           setProfile(userProfile);
           setIsFollowingProfile(relationship?.is_following ?? false);
+          setIsPendingProfile(relationship?.is_pending ?? false);
         }
       } catch (requestError) {
         if (
@@ -223,13 +227,17 @@ export default function ProfilePage() {
   async function handleFollowProfile() {
     try {
       const response = await followUser(id);
-      setIsFollowingProfile(response.status === "following");
       if (response.status === "following") {
+        setIsFollowingProfile(true);
+        setIsPendingProfile(false);
         setProfile((current) =>
           current
             ? { ...current, followers_count: (current.followers_count ?? 0) + 1 }
             : current,
         );
+      } else if (response.status === "pending") {
+        setIsFollowingProfile(false);
+        setIsPendingProfile(true);
       }
     } catch (requestError) {
       showError(
@@ -243,6 +251,7 @@ export default function ProfilePage() {
     try {
       await unfollowUser(id);
       setIsFollowingProfile(false);
+      setIsPendingProfile(false);
       setProfile((current) =>
         current
           ? {
@@ -254,6 +263,19 @@ export default function ProfilePage() {
     } catch (requestError) {
       showError(
         "Failed to unfollow user",
+        requestError.message || "Please try again",
+      );
+    }
+  }
+
+  async function handleCancelFollowProfile() {
+    try {
+      await cancelFollowRequest(id);
+      setIsFollowingProfile(false);
+      setIsPendingProfile(false);
+    } catch (requestError) {
+      showError(
+        "Failed to cancel follow request",
         requestError.message || "Please try again",
       );
     }
@@ -445,7 +467,7 @@ export default function ProfilePage() {
               <p className="profile-bio">{profile.about_me}</p>
             )}
 
-            {/* Primary Action Button: "Edit profile" or "Follow" */}
+            {/* Primary Action Button: "Edit profile", "Unfollow", "Pending Request", or "Follow" */}
             {(!isMobile || !isOwnProfile) && (
               <div className="profile-primary-actions">
                 {isOwnProfile ? (
@@ -456,21 +478,31 @@ export default function ProfilePage() {
                   >
                     Edit profile
                   </button>
+                ) : isFollowingProfile ? (
+                  <button
+                    type="button"
+                    className="profile-edit-profile-btn secondary"
+                    onClick={handleUnfollowProfile}
+                  >
+                    Unfollow
+                  </button>
+                ) : isPendingProfile ? (
+                  <button
+                    type="button"
+                    className="profile-edit-profile-btn pending"
+                    onClick={handleCancelFollowProfile}
+                    title="Click to cancel follow request"
+                  >
+                    <Clock size={18} weight="bold" />
+                    <span>Pending Request</span>
+                  </button>
                 ) : (
                   <button
                     type="button"
-                    className={
-                      isFollowingProfile
-                        ? "profile-edit-profile-btn secondary"
-                        : "profile-edit-profile-btn primary"
-                    }
-                    onClick={
-                      isFollowingProfile
-                        ? handleUnfollowProfile
-                        : handleFollowProfile
-                    }
+                    className="profile-edit-profile-btn primary"
+                    onClick={handleFollowProfile}
                   >
-                    {isFollowingProfile ? "Unfollow" : "Follow"}
+                    Follow
                   </button>
                 )}
               </div>

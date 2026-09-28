@@ -407,7 +407,12 @@ func followStatusHandler(db *sql.DB, field string, relation func(string, string)
 			helpers.WriteError(w, http.StatusInternalServerError, "failed to check follow status")
 			return
 		}
-		helpers.WriteJSON(w, http.StatusOK, map[string]any{field: exists, "user_id": targetID})
+		_, pending, err := getPendingFollowRequestID(db, currentUser.ID, targetID)
+		if err != nil {
+			helpers.WriteError(w, http.StatusInternalServerError, "failed to check pending follow status")
+			return
+		}
+		helpers.WriteJSON(w, http.StatusOK, map[string]any{field: exists, "is_pending": pending, "user_id": targetID})
 	}
 }
 
