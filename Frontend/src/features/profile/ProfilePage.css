@@ -243,6 +243,22 @@
   background: #30363d;
 }
 
+.profile-edit-profile-btn.pending {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #f59e0b;
+  background: rgb(245 158 11 / 14%);
+  border: 1px solid rgb(245 158 11 / 32%);
+}
+
+.profile-edit-profile-btn.pending:hover {
+  color: #fbbf24;
+  background: rgb(245 158 11 / 24%);
+  border-color: rgb(245 158 11 / 50%);
+}
+
 /* Meta list with Phosphor Icons */
 .profile-meta-list {
   display: flex;
