@@ -224,8 +224,11 @@ export function ChatRealtimeProvider({ children }) {
     });
 
     socketRef.current = socket;
-    socket.connect();
+    // Let Strict Mode's development-only setup/cleanup pass finish before
+    // opening a connection that it will immediately close.
+    const connectTimer = window.setTimeout(() => socket.connect(), 0);
     return () => {
+      window.clearTimeout(connectTimer);
       typingTimers.forEach((timer) => window.clearTimeout(timer));
       typingTimers.clear();
       socket.close();

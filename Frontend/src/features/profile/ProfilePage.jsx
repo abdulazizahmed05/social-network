@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   useLocation,
   useNavigate,
@@ -65,12 +66,9 @@ export default function ProfilePage() {
   const [reactingPostID, setReactingPostID] = useState("");
   const [deletingPostID, setDeletingPostID] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isUnfollowConfirmOpen, setIsUnfollowConfirmOpen] = useState(false);
   const [isFollowingProfile, setIsFollowingProfile] = useState(false);
-<<<<<<< HEAD
-  const [isFollowRequestedProfile, setIsFollowRequestedProfile] = useState(false);
-=======
   const [isPendingProfile, setIsPendingProfile] = useState(false);
->>>>>>> 7bc42999c58dd9c40801e3738f1232827acc0349
 
   const [followersList, setFollowersList] = useState([]);
   const [followingList, setFollowingList] = useState([]);
@@ -127,11 +125,9 @@ export default function ProfilePage() {
           setCurrentUser(myProfile);
           setProfile(userProfile);
           setIsFollowingProfile(relationship?.is_following ?? false);
-<<<<<<< HEAD
-          setIsFollowRequestedProfile(relationship?.is_requested ?? false);
-=======
-          setIsPendingProfile(relationship?.is_pending ?? false);
->>>>>>> 7bc42999c58dd9c40801e3738f1232827acc0349
+          setIsPendingProfile(
+            relationship?.is_pending ?? relationship?.is_requested ?? false,
+          );
         }
       } catch (requestError) {
         if (
@@ -199,6 +195,19 @@ export default function ProfilePage() {
     };
   }, [activeTab, id]);
 
+  useEffect(() => {
+    if (!isUnfollowConfirmOpen) return undefined;
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        setIsUnfollowConfirmOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isUnfollowConfirmOpen]);
+
   async function handleLogout() {
     try {
       await logoutUser();
@@ -235,11 +244,6 @@ export default function ProfilePage() {
   async function handleFollowProfile() {
     try {
       const response = await followUser(id);
-<<<<<<< HEAD
-      setIsFollowingProfile(response.status === "following");
-      setIsFollowRequestedProfile(response.status === "pending");
-=======
->>>>>>> 7bc42999c58dd9c40801e3738f1232827acc0349
       if (response.status === "following") {
         setIsFollowingProfile(true);
         setIsPendingProfile(false);
@@ -264,11 +268,7 @@ export default function ProfilePage() {
     try {
       await unfollowUser(id);
       setIsFollowingProfile(false);
-<<<<<<< HEAD
-      setIsFollowRequestedProfile(false);
-=======
       setIsPendingProfile(false);
->>>>>>> 7bc42999c58dd9c40801e3738f1232827acc0349
       setProfile((current) =>
         current
           ? {
@@ -499,7 +499,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     className="profile-edit-profile-btn secondary"
-                    onClick={handleUnfollowProfile}
+                    onClick={() => setIsUnfollowConfirmOpen(true)}
                   >
                     Unfollow
                   </button>
@@ -516,30 +516,10 @@ export default function ProfilePage() {
                 ) : (
                   <button
                     type="button"
-<<<<<<< HEAD
-                    className={
-                      isFollowingProfile
-                        ? "profile-edit-profile-btn secondary"
-                        : "profile-edit-profile-btn primary"
-                    }
-                    disabled={isFollowRequestedProfile}
-                    onClick={
-                      isFollowingProfile
-                        ? handleUnfollowProfile
-                        : handleFollowProfile
-                    }
-                  >
-                    {isFollowingProfile
-                      ? "Unfollow"
-                      : isFollowRequestedProfile
-                        ? "Requested"
-                        : "Follow"}
-=======
                     className="profile-edit-profile-btn primary"
                     onClick={handleFollowProfile}
                   >
                     Follow
->>>>>>> 7bc42999c58dd9c40801e3738f1232827acc0349
                   </button>
                 )}
               </div>
@@ -839,6 +819,55 @@ export default function ProfilePage() {
           onSave={handleProfileSave}
         />
       )}
+
+      {isUnfollowConfirmOpen &&
+        createPortal(
+          <div
+            className="profile-confirm-backdrop"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) {
+                setIsUnfollowConfirmOpen(false);
+              }
+            }}
+          >
+            <section
+              className="profile-confirm-dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="profile-unfollow-title"
+              aria-describedby="profile-unfollow-description"
+            >
+              <span className="profile-confirm-eyebrow">Confirm action</span>
+              <h2 id="profile-unfollow-title">
+                Unfollow {getUserFullName(profile)}?
+              </h2>
+              <p id="profile-unfollow-description">
+                Their posts will no longer appear in your following feed.
+              </p>
+              <div className="profile-confirm-actions">
+                <button
+                  type="button"
+                  className="profile-confirm-cancel"
+                  onClick={() => setIsUnfollowConfirmOpen(false)}
+                  autoFocus
+                >
+                  Keep following
+                </button>
+                <button
+                  type="button"
+                  className="profile-confirm-unfollow"
+                  onClick={() => {
+                    setIsUnfollowConfirmOpen(false);
+                    handleUnfollowProfile();
+                  }}
+                >
+                  Unfollow
+                </button>
+              </div>
+            </section>
+          </div>,
+          document.body,
+        )}
     </main>
   );
 }
